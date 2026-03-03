@@ -4,6 +4,11 @@ version = "0.15.0"
 readme = "README.md"
 license = { file = "LICENSE" }
 requires-python = ">=3.10"
+dependencies = [
+    "aiohttp>=3.13.3",
+    "sqlalchemy>=2.0.47",
+    "torchaudio>=2.10.0",
+]
 
 [project.urls]
 homepage = "https://www.comfy.org/"
