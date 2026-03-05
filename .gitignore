@@ -24,6 +24,3 @@ web_custom_versions/
 openapi.yaml
 filtered-openapi.yaml
 uv.lock
-
-# standalone backend repository
-/backend/
