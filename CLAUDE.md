@@ -108,9 +108,52 @@ uv run mypy app/                                    # type check
 
 ## Router structure
 
-`backend/app/routers/`: auth, workflows, jobs, assets, review, export, admin, ui
+`backend/app/routers/`: auth, workflows, jobs, assets, review, export, admin, ui, users
 All registered in `backend/app/main.py` under `/api` prefix.
 
 When adding a new router:
 1. Create `backend/app/routers/my_feature.py`
 2. In `main.py`: `from .routers import my_feature` then `app.include_router(my_feature.router, prefix="/api")`
+
+## Committing changes
+
+This project has **three separate git repositories**:
+
+| Repo | Path | Notes |
+|------|------|-------|
+| Root (ComfyUI core) | `/home/tom/projects/ComfyUI` | Tracks `backend/` as a submodule and `frontend/` as a gitlink |
+| Backend | `backend/` | Git submodule — has a pre-commit hook that runs ruff |
+| Frontend | `frontend/` | Embedded git repo — Next.js app |
+
+**When the user says "commit", always commit in each repo that has changes, then update the root repo's pointers.**
+
+### Step-by-step commit procedure
+
+1. **Backend** (if `backend/` has changes):
+   ```bash
+   cd backend
+   git add <changed files>
+   git commit -m "..."
+   ```
+   The pre-commit hook runs `ruff`. If it auto-fixes files, re-stage and commit again.
+
+2. **Frontend** (if `frontend/` has changes):
+   ```bash
+   cd frontend
+   git add <changed files>
+   git commit -m "..."
+   ```
+
+3. **Root repo** (always, to update submodule/gitlink pointers):
+   ```bash
+   # from repo root
+   git add backend frontend   # whichever changed
+   git commit -m "chore: update backend/frontend pointers"
+   ```
+   If root-level files also changed (e.g. CLAUDE.md, AGENTS.md), include them in this commit or a separate one.
+
+### What to add in each repo
+
+- **Backend**: only `app/` source files. Never add `data/`, `logs/`, `*.db`, `.env`, `testuvloop.py`.
+- **Frontend**: `app/`, `components/`, `hooks/`, `lib/`, `types/`, `public/`. Also `package.json`, `package-lock.json`, `next.config.ts` when deps/config changed. Never add `.next/`, `node_modules/`.
+- **Root**: `backend` and/or `frontend` gitlinks, `CLAUDE.md`, `AGENTS.md`, `docker-compose.yml`, `Dockerfile`, `Caddyfile`, `.dockerignore`. Never add `prompts/`, `output.*`, `src/`, `FlexGEMM/`, `eralchemy/`, `cuda-keyring*`, `scripts/` unless explicitly asked.
