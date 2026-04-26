@@ -36,6 +36,38 @@
 
 ComfyUI lets you design and execute advanced stable diffusion pipelines using a graph/nodes/flowchart based interface. Available on Windows, Linux, and macOS.
 
+## Quick Setup
+
+> For full details see [INSTALL.md](./INSTALL.md). You will need an NVIDIA GPU, Python 3.13+, Node.js 18+, and [uv](https://docs.astral.sh/uv/getting-started/installation/).
+
+```bash
+# 1. Clone everything (ComfyUI + backend + frontend)
+git clone --recurse-submodules git@github.com:CYENS/ComfyUI.git
+cd ComfyUI
+
+# 2. Install ComfyUI dependencies
+pip install -r requirements.txt
+
+# 3. Install backend dependencies and seed the database
+cd backend && uv sync && cp .env.example .env && uv run python -m app.seed && cd ..
+
+# 4. Install frontend dependencies
+cd frontend && npm install && cd ..
+```
+
+Then open **four terminals** from the `ComfyUI/` directory:
+
+| Terminal | Command |
+|----------|---------|
+| 1 — AI engine | `python main.py --listen 0.0.0.0 --port 8188` |
+| 2 — API server | `cd backend && uv run uvicorn app.main:app --reload --port 8000` |
+| 3 — Worker | `cd backend && uv run python -m app.worker` |
+| 4 — Web app | `cd frontend && npm run dev` |
+
+Open **http://localhost:3000** and log in with `admin` / `admin123`.
+
+---
+
 ## Get Started
 
 #### [Desktop Application](https://www.comfy.org/download)
