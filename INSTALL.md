@@ -61,6 +61,8 @@ pip install -r requirements.txt
 python main.py --listen 0.0.0.0 --port 8188
 ```
 
+> If you want all three components at once, see [Running everything together](#running-everything-together) — a single clone command will get everything.
+
 > AI model files (`.safetensors`, `.gguf`, etc.) must be present in the `models/` folder for workflows to run. These are large files not included in the repo — ask the project admin for access.
 
 ---
@@ -132,14 +134,32 @@ Open [http://localhost:3000](http://localhost:3000) and log in with any account 
 
 ## Running everything together
 
-You need **four terminals**:
+### Step 1 — Clone everything at once
+
+Because the backend and frontend are submodules of the main repo, a single command gets all three:
+
+```bash
+git clone --recurse-submodules git@github.com:CYENS/ComfyUI.git
+cd ComfyUI
+```
+
+This gives you:
+- `ComfyUI/` — the AI engine
+- `ComfyUI/backend/` — the API server
+- `ComfyUI/frontend/` — the web app
+
+### Step 2 — Set up each component
+
+Follow the [Backend](#backend) and [Frontend](#frontend) sections above, using the paths `backend/` and `frontend/` relative to the `ComfyUI` root instead of separate clones.
+
+### Step 3 — Run four terminals
 
 | Terminal | Directory | Command |
 |----------|-----------|---------|
 | 1 | `ComfyUI/` | `python main.py --listen 0.0.0.0 --port 8188` |
-| 2 | `comfyui-backend/` | `uv run uvicorn app.main:app --reload --port 8000` |
-| 3 | `comfyui-backend/` | `uv run python -m app.worker` |
-| 4 | `loomaxr-api-platform-frontend/` | `npm run dev` |
+| 2 | `ComfyUI/backend/` | `uv run uvicorn app.main:app --reload --port 8000` |
+| 3 | `ComfyUI/backend/` | `uv run python -m app.worker` |
+| 4 | `ComfyUI/frontend/` | `npm run dev` |
 
 Then open [http://localhost:3000](http://localhost:3000).
 
