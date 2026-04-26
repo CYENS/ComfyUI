@@ -64,7 +64,17 @@ Then open **four terminals** from the `ComfyUI/` directory:
 | 3 — Worker | `cd backend && uv run python -m app.worker` |
 | 4 — Web app | `cd frontend && npm run dev` |
 
-Open **http://localhost:3000** and log in with `admin` / `admin123`.
+Open **http://localhost:3000** and log in with any of the seeded accounts:
+
+| Username | Password | Role |
+|----------|----------|------|
+| `admin` | `admin123` | Full access |
+| `workflow_creator` | `workflow123` | Create & edit workflows |
+| `job_creator` | `job123` | Run workflows |
+| `viewer` | `viewer123` | View approved outputs |
+| `moderator` | `moderator123` | Approve/reject outputs |
+
+> To reset the database at any time: `cd backend && rm -f backend.db && uv run python -m app.seed`
 
 ---
 
