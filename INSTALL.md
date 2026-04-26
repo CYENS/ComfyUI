@@ -12,10 +12,13 @@ This project has three parts that work together:
 
 | Tool | Version | How to get it |
 |------|---------|---------------|
-| Python | 3.14+ | [python.org](https://www.python.org/downloads/) |
+| Python | 3.13+ | [python.org](https://www.python.org/downloads/) |
 | Node.js | 18+ | [nodejs.org](https://nodejs.org/) |
 | Git | any | [git-scm.com](https://git-scm.com/) |
 | uv | latest | see below |
+| NVIDIA GPU | CUDA-capable | Required to run AI workflows |
+
+> **GPU note:** ComfyUI requires a CUDA-capable NVIDIA GPU for image/audio/video generation. CPU-only mode is possible but very slow and not officially supported here.
 
 ### Installing uv (Python package manager)
 
@@ -34,20 +37,45 @@ After installing, restart your terminal and confirm it works:
 uv --version
 ```
 
+> **Note:** uv automatically downloads and manages the correct Python version for the backend — you don't need to install Python 3.14 manually.
+
+### SSH access
+
+All three repositories are private and use SSH. Make sure your GitHub SSH key is set up before cloning:
+- [GitHub docs: generating an SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+
 ---
 
-## Step 1 — Clone the repository
+## Step 1 — Clone the repositories
+
+The project uses three git repos. Clone them in order:
 
 ```bash
-git clone --recurse-submodules https://github.com/CYENS/ComfyUI.git
+# Clone the main repo (includes the backend as a submodule)
+git clone --recurse-submodules git@github.com:CYENS/ComfyUI.git
 cd ComfyUI
+
+# Clone the frontend into the expected location
+git clone git@github.com:cchadj/loomaxr-api-platform-frontend.git frontend
 ```
 
-> The `--recurse-submodules` flag is important — it also downloads the backend, which lives in a separate repo.
+> `--recurse-submodules` automatically clones the backend repo into `backend/`. The frontend must be cloned separately.
 
 ---
 
-## Step 2 — Set up the Backend
+## Step 2 — Install ComfyUI dependencies
+
+From the project root:
+
+```bash
+pip install -r requirements.txt
+```
+
+This installs PyTorch (with CUDA), numpy, and the other packages ComfyUI needs.
+
+---
+
+## Step 3 — Set up the Backend
 
 ```bash
 cd backend
@@ -55,10 +83,14 @@ uv sync
 cp .env.example .env
 ```
 
-Open `.env` in a text editor. The defaults work for local development, but check these two lines:
+Open `.env` in a text editor and update these values for local development:
 
-- `COMFY_BASE_URL` — leave as `http://127.0.0.1:8188` (where ComfyUI will run)
-- `DATABASE_URL` — leave as `sqlite:///./backend.db` (SQLite, no extra setup needed)
+| Key | Default in .env.example | What to set it to locally |
+|-----|--------------------------|---------------------------|
+| `COMFY_BASE_URL` | `http://127.0.0.1:8188` | leave as-is |
+| `DATABASE_URL` | `sqlite:///./backend.db` | leave as-is |
+| `COMFY_MODELS_DIR` | `/app/models` | absolute path to your `models/` folder, e.g. `/home/yourname/ComfyUI/models` |
+| `WORKER_LOG_FILE` | `/home/tom/…/worker.log` | any writable path, e.g. `./logs/worker.log` |
 
 Now seed the database with sample users and workflows:
 
@@ -83,25 +115,13 @@ cd ..
 
 ---
 
-## Step 3 — Set up the Frontend
+## Step 4 — Set up the Frontend
 
 ```bash
 cd frontend
 npm install
 cd ..
 ```
-
----
-
-## Step 4 — Install ComfyUI dependencies
-
-From the project root:
-
-```bash
-pip install -r requirements.txt
-```
-
-> If you don't have a GPU or want a lighter install, use `requirements.no-torch.txt` instead.
 
 ---
 
@@ -144,7 +164,7 @@ Once all four are running, go to:
 http://localhost:3000
 ```
 
-Log in with any of the test accounts from Step 2. The `admin` account can do everything.
+Log in with any of the test accounts from Step 3. The `admin` account can do everything.
 
 ---
 
@@ -158,5 +178,7 @@ cd backend
 rm -f backend.db
 uv run python -m app.seed
 ```
+
+**Workflows fail with "missing model"** — the AI model files need to be present in `COMFY_MODELS_DIR`. Models are large files (1–20 GB each) and are not included in the repo. Ask the project admin to share them or check the workflow's requirements page for download links.
 
 **`uv run pip install` fails with permission error** — use `uv pip install` instead (without `run`).
