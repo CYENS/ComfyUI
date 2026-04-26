@@ -1,26 +1,23 @@
 # Installation Guide
 
-This project has three parts that work together:
+The project is made up of three independent components. You can set each one up on its own, or run all three together.
 
-- **ComfyUI** — the AI engine that runs image/audio/video workflows
-- **Backend** — a FastAPI server that manages users, workflows, jobs, and assets
-- **Frontend** — the Next.js web app you interact with in your browser
+| Component | Repository | Purpose |
+|-----------|-----------|---------|
+| **ComfyUI** | `git@github.com:CYENS/ComfyUI.git` | AI engine — runs the actual image/audio/video generation |
+| **Backend** | `git@github.com:CYENS/comfyui-backend.git` | API server — manages users, workflows, jobs, and assets |
+| **Frontend** | `git@github.com:cchadj/loomaxr-api-platform-frontend.git` | Web app — the interface you use in the browser |
+
+> All repositories are private. Make sure your GitHub SSH key is configured before cloning.
+> [GitHub docs: generating an SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
 
 ---
 
-## What you need before you start
+## Prerequisites
 
-| Tool | Version | How to get it |
-|------|---------|---------------|
-| Python | 3.13+ | [python.org](https://www.python.org/downloads/) |
-| Node.js | 18+ | [nodejs.org](https://nodejs.org/) |
-| Git | any | [git-scm.com](https://git-scm.com/) |
-| uv | latest | see below |
-| NVIDIA GPU | CUDA-capable | Required to run AI workflows |
+Install these once, before anything else.
 
-> **GPU note:** ComfyUI requires a CUDA-capable NVIDIA GPU for image/audio/video generation. CPU-only mode is possible but very slow and not officially supported here.
-
-### Installing uv (Python package manager)
+### uv (Python package manager)
 
 **Mac / Linux:**
 ```bash
@@ -32,153 +29,132 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
 ```
 
-After installing, restart your terminal and confirm it works:
+Confirm it works:
 ```bash
 uv --version
 ```
 
-> **Note:** uv automatically downloads and manages the correct Python version for the backend — you don't need to install Python 3.14 manually.
+### Node.js
 
-### SSH access
+Download from [nodejs.org](https://nodejs.org/) — version 18 or higher.
 
-All three repositories are private and use SSH. Make sure your GitHub SSH key is set up before cloning:
-- [GitHub docs: generating an SSH key](https://docs.github.com/en/authentication/connecting-to-github-with-ssh/generating-a-new-ssh-key-and-adding-it-to-the-ssh-agent)
+### Python
+
+Download from [python.org](https://www.python.org/downloads/) — version 3.13 or higher.
+
+> uv automatically downloads the correct Python version for the backend, so you only need Python installed for ComfyUI itself.
+
+### NVIDIA GPU (for ComfyUI)
+
+ComfyUI requires a CUDA-capable NVIDIA GPU to run AI workflows. CPU-only mode is possible but very slow.
 
 ---
 
-## Step 1 — Clone the repositories
+## ComfyUI
 
-The project uses three git repos. Clone them in order:
+The AI engine. Runs on port **8188**.
 
 ```bash
-# Clone the main repo (includes the backend as a submodule)
-git clone --recurse-submodules git@github.com:CYENS/ComfyUI.git
+git clone git@github.com:CYENS/ComfyUI.git
 cd ComfyUI
-
-# Clone the frontend into the expected location
-git clone git@github.com:cchadj/loomaxr-api-platform-frontend.git frontend
-```
-
-> `--recurse-submodules` automatically clones the backend repo into `backend/`. The frontend must be cloned separately.
-
----
-
-## Step 2 — Install ComfyUI dependencies
-
-From the project root:
-
-```bash
 pip install -r requirements.txt
+python main.py --listen 0.0.0.0 --port 8188
 ```
 
-This installs PyTorch (with CUDA), numpy, and the other packages ComfyUI needs.
+> AI model files (`.safetensors`, `.gguf`, etc.) must be present in the `models/` folder for workflows to run. These are large files not included in the repo — ask the project admin for access.
 
 ---
 
-## Step 3 — Set up the Backend
+## Backend
+
+The API server. Runs on port **8000**.
 
 ```bash
-cd backend
+git clone git@github.com:CYENS/comfyui-backend.git
+cd comfyui-backend
 uv sync
 cp .env.example .env
 ```
 
-Open `.env` in a text editor and update these values for local development:
+Open `.env` and update these for local development:
 
-| Key | Default in .env.example | What to set it to locally |
-|-----|--------------------------|---------------------------|
-| `COMFY_BASE_URL` | `http://127.0.0.1:8188` | leave as-is |
-| `DATABASE_URL` | `sqlite:///./backend.db` | leave as-is |
-| `COMFY_MODELS_DIR` | `/app/models` | absolute path to your `models/` folder, e.g. `/home/yourname/ComfyUI/models` |
-| `WORKER_LOG_FILE` | `/home/tom/…/worker.log` | any writable path, e.g. `./logs/worker.log` |
+| Key | What to set |
+|-----|-------------|
+| `COMFY_BASE_URL` | `http://127.0.0.1:8188` (where ComfyUI is running) |
+| `COMFY_MODELS_DIR` | Absolute path to your ComfyUI `models/` folder, e.g. `/home/yourname/ComfyUI/models` |
+| `WORKER_LOG_FILE` | Any writable path, e.g. `./logs/worker.log` |
+| `DATABASE_URL` | Leave as `sqlite:///./backend.db` for local dev |
 
-Now seed the database with sample users and workflows:
+Seed the database with sample users and workflows:
 
 ```bash
 uv run python -m app.seed
 ```
 
-This creates the following test accounts:
+This creates the following accounts:
 
 | Username | Password | Role |
 |----------|----------|------|
-| `admin` | `admin123` | Admin (full access) |
-| `workflow_creator` | `workflow123` | Can create & edit workflows |
-| `job_creator` | `job123` | Can run workflows |
-| `viewer` | `viewer123` | Can view approved outputs |
-| `moderator` | `moderator123` | Can approve/reject outputs |
+| `admin` | `admin123` | Full access |
+| `workflow_creator` | `workflow123` | Create & edit workflows |
+| `job_creator` | `job123` | Run workflows |
+| `viewer` | `viewer123` | View approved outputs |
+| `moderator` | `moderator123` | Approve/reject outputs |
 
-Go back to the project root when done:
-```bash
-cd ..
-```
-
----
-
-## Step 4 — Set up the Frontend
+Start the API server:
 
 ```bash
-cd frontend
-npm install
-cd ..
-```
-
----
-
-## Running everything
-
-You need **four terminal windows** open at the same time.
-
-### Terminal 1 — ComfyUI (the AI engine)
-```bash
-# from the project root
-python main.py --listen 0.0.0.0 --port 8188
-```
-
-### Terminal 2 — Backend API
-```bash
-cd backend
 uv run uvicorn app.main:app --reload --port 8000
 ```
 
-### Terminal 3 — Background Worker
+Start the background worker (separate terminal — it submits jobs to ComfyUI):
+
 ```bash
-cd backend
 uv run python -m app.worker
 ```
-The worker picks up submitted jobs and sends them to ComfyUI.
 
-### Terminal 4 — Frontend
+---
+
+## Frontend
+
+The web app. Runs on port **3000**.
+
 ```bash
-cd frontend
+git clone git@github.com:cchadj/loomaxr-api-platform-frontend.git
+cd loomaxr-api-platform-frontend
+npm install
 npm run dev
 ```
 
----
-
-## Open in your browser
-
-Once all four are running, go to:
-
-```
-http://localhost:3000
-```
-
-Log in with any of the test accounts from Step 3. The `admin` account can do everything.
+Open [http://localhost:3000](http://localhost:3000) and log in with any account from the Backend section above.
 
 ---
 
-## If something goes wrong
+## Running everything together
 
-**Port already in use** — another process is using 8188, 8000, or 3000. Stop it, or change the port in the relevant command and `.env`.
+You need **four terminals**:
 
-**Backend fails to start with a database error** — the database schema is out of date. Delete it and re-seed:
+| Terminal | Directory | Command |
+|----------|-----------|---------|
+| 1 | `ComfyUI/` | `python main.py --listen 0.0.0.0 --port 8188` |
+| 2 | `comfyui-backend/` | `uv run uvicorn app.main:app --reload --port 8000` |
+| 3 | `comfyui-backend/` | `uv run python -m app.worker` |
+| 4 | `loomaxr-api-platform-frontend/` | `npm run dev` |
+
+Then open [http://localhost:3000](http://localhost:3000).
+
+---
+
+## Troubleshooting
+
+**Port already in use** — stop the conflicting process or change the port in the command and `.env`.
+
+**Backend database error on startup** — drop and recreate the database:
 ```bash
-cd backend
 rm -f backend.db
 uv run python -m app.seed
 ```
 
-**Workflows fail with "missing model"** — the AI model files need to be present in `COMFY_MODELS_DIR`. Models are large files (1–20 GB each) and are not included in the repo. Ask the project admin to share them or check the workflow's requirements page for download links.
+**Workflow fails with "missing model"** — the required model file is not in `COMFY_MODELS_DIR`. Check the workflow's Requirements tab in the UI for download links, or ask the admin to trigger a download.
 
-**`uv run pip install` fails with permission error** — use `uv pip install` instead (without `run`).
+**`uv run pip install` fails with permission error** — use `uv pip install` (without `run`).
